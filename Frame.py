@@ -2,6 +2,45 @@ import cv2
 import os
 from PIL import Image
 import numpy as np 
+import random
+import shutil
+
+def shuffle_and_split(source_folder, output_folder1, output_folder2, split_ratio=0.8):
+    """
+    Shuffles and splits the contents of a folder into two output folders.
+
+    Parameters:
+    - source_folder (str): Path to the source folder containing files.
+    - output_folder1 (str): Path to the first output folder.
+    - output_folder2 (str): Path to the second output folder.
+    - split_ratio (float): Fraction of files to move to the first folder (0 < split_ratio < 1).
+    """
+    # Create output folders if they don't exist
+    if not os.path.exists(output_folder1):
+        os.makedirs(output_folder1)
+    if not os.path.exists(output_folder2):
+        os.makedirs(output_folder2)
+
+    # List all files in the source folder
+    files = os.listdir(source_folder)
+
+    # Shuffle the files
+    random.shuffle(files)
+
+    # Split files based on the ratio
+    split_point = int(len(files) * split_ratio)
+    files_for_folder1 = files[:split_point]
+    files_for_folder2 = files[split_point:]
+
+    # Move files to the respective folders
+    for file in files_for_folder1:
+        shutil.move(os.path.join(source_folder, file), os.path.join(output_folder1, file))
+
+    for file in files_for_folder2:
+        shutil.move(os.path.join(source_folder, file), os.path.join(output_folder2, file))
+
+    print(f"Moved {len(files_for_folder1)} files to {output_folder1}.")
+    print(f"Moved {len(files_for_folder2)} files to {output_folder2}.")
 
 
 def process_image(image, new_height=512):
@@ -14,76 +53,73 @@ def process_image(image, new_height=512):
     """
     # Crop the image
     width, height = image.size
-
-
     # Resize the image
     aspect_ratio =  width/height
     new_width = int(new_height * aspect_ratio)
     return(image.resize((new_width, new_height)))
 
-def extract_frames(video_path, output_folder1,output_folder2):
+def extract_frames(video_path,output_folder):
     """
     Extracts frames from a video and saves them as images in the specified folder.
 
     Parameters:
     - video_path (str): Path to the video file.
-    - output_folder (str): Path to the folder where frames will be saved.
+    - output_folder (str): Path to the 1st_folder where frames will be saved.
     """
-    # Create the output folder if it doesn't exist
-    if not os.path.exists(output_folder1):
-        os.makedirs(output_folder1)
+   
 
-    if not os.path.exists(output_folder2):
-        os.makedirs(output_folder2)
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
     # Open the video file
     video_capture = cv2.VideoCapture(video_path)
     if not video_capture.isOpened():
         print("Error: Could not open video.")
         return
+    
 
+    total_frames = video_capture.get(cv2.CAP_PROP_FRAME_COUNT)
     frame_number = 0
-    # we can make code better here by actaully changing the amounts we want to put to test and tran
-    test = 25
-    train = 103
+    Max = 150 # * The total amount of pics you want
+    every_frame = 5 # * This makes it so every n frames we take a screenshot of the video 
+    curr_shot = 0 
+    print(every_frame)
+   
+
     while True:
         success, frame = video_capture.read()
-        
         if not success:
             break  # Exit when there are no more frames
-      
-
-       
-        # Save the frame as an image
-        pil_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-        processed_pil_image = process_image(pil_image)
-        processed_frame = cv2.cvtColor(np.array(processed_pil_image), cv2.COLOR_RGB2BGR)
-        if frame_number < test:
-            frame_filename = os.path.join(output_folder1, f"frame_{frame_number:04d}.jpg")
+        if frame_number % every_frame == 0:
+            # Save the frame as an image
+            if curr_shot > 150:
+                break
+            pil_image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+            processed_pil_image = process_image(pil_image)
+            processed_frame = cv2.cvtColor(np.array(processed_pil_image), cv2.COLOR_RGB2BGR)
+            frame_filename = os.path.join(output_folder, f"frame_{curr_shot:04d}.jpg")
             cv2.imwrite(frame_filename, processed_frame)
             print(f"Saved {frame_filename}")
-        elif frame_number < train:
-            frame_filename2 = os.path.join(output_folder2, f"frame_{frame_number:04d}.jpg")
-            cv2.imwrite(frame_filename2, processed_frame)
-            print(f"Saved {frame_filename2}")
-        else:
-            break
+            curr_shot +=1
         frame_number += 1
 
     # Release the video capture
     video_capture.release()
     print("Frame extraction complete.")
+    
 
 # Example usage
 def main():
-   
 
-        
-   
-    video_path = r"C:\Users\leoca\Downloads\Photos-001\IMG_1744.MOV" # Use raw string
-    output_folder = "Four"  # Replace with your desired output folder
-    output_folder2 = "Four_"
-    extract_frames(video_path, output_folder,output_folder2)
+    video_path = r"C:\Users\leoca\Downloads\4 - Made with Clipchamp.mp4" # Change to w.e image
+    frame_folder = "Frames"
+    output1 = "Four"  # Replace with your desired output folder
+    output2 = "Four_"
+    extract_frames(video_path, frame_folder)
+    # Example usage
+    shuffle_and_split(frame_folder, output1, output2, split_ratio=0.8)
+
+
 
 
 main()
