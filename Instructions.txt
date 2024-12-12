@@ -1,0 +1,12 @@
+You can use this program to pretty much break up a video over how many frames you want, and separate them into folders in a set portion you can change. This portion is basically you custom train and test dataset. So to use this code just make your own GitHub repo, and make your data in the format below and then upload it to GitHub
+
+			
+				-class1
+		- train 	-class2
+				-class2
+
+data 	-temp.zip
+				-class1	
+		- test		-class2
+				-class2
+Then copy the raw zip code from this uploaded file to goggle colab and replace it by the link provided and it should work :3 
